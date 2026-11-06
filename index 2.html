@@ -1,0 +1,653 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Simulador de investimentos para universitários: reserva, Tesouro Direto, ETFs e ações, com a explicação de cada escolha. Projeto educacional FACC/UFRJ.">
+<style>
+html{color-scheme:light}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>Rumo Investe FACC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: site de uma página — barra fixa, faixa de abertura azul, simulador em coluna, guia e sobre */
+:root{
+  --bg:#F3F5FA; --paper:#FFFFFF; --ink:#13203B; --muted:#56627A; --line:#D9DFEA;
+  --navy:#123A7A; --navy-ink:#FFFFFF; --amber:#C77A0A; --amber-bg:#FFF4DF;
+  --sim:#1E7F4F; --sim-bg:#E5F4EC; --nao:#C2410C; --nao-bg:#FDEBE1;
+  --soft:#E9EEF8;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C1322; --paper:#141E33; --ink:#E7ECF6; --muted:#9AA7C0; --line:#26334F;
+  --navy:#5B8DEF; --navy-ink:#0C1322; --amber:#F2B347; --amber-bg:#2E2412;
+  --sim:#4CC38A; --sim-bg:#12291F; --nao:#FB8A55; --nao-bg:#2E1A12; --soft:#1A2640; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C1322; --paper:#141E33; --ink:#E7ECF6; --muted:#9AA7C0; --line:#26334F;
+  --navy:#5B8DEF; --navy-ink:#0C1322; --amber:#F2B347; --amber-bg:#2E2412;
+  --sim:#4CC38A; --sim-bg:#12291F; --nao:#FB8A55; --nao-bg:#2E1A12; --soft:#1A2640; color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55;padding-block:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:960px;margin:0 auto;display:flex;flex-direction:column;gap:28px;padding-block:8px 0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.band{padding-block:56px}
+.band .in{max-width:960px;margin:0 auto;display:flex;flex-direction:column;gap:18px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+section[id]{scroll-margin-top:72px}
+/* barra de navegação */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--paper);border-bottom:1px solid var(--line)}
+.nav .in{max-width:960px;margin:0 auto;display:flex;align-items:center;gap:18px;min-height:58px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.brand{font-family:var(--f-display);font-weight:800;font-size:19px;color:var(--ink);text-decoration:none;white-space:nowrap;display:flex;align-items:center;gap:8px}
+.brand i{width:22px;height:22px;border-radius:6px;background:var(--navy);display:inline-grid;place-items:center}
+.brand i::after{content:"";width:9px;height:9px;border-top:3px solid var(--navy-ink);border-right:3px solid var(--navy-ink);transform:translate(-1px,1px)}
+.links{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;margin-left:auto;min-width:0}
+.links::-webkit-scrollbar{display:none}
+.links a{text-decoration:none;color:var(--muted);font-weight:600;font-size:15px;padding:7px 10px;border-radius:8px;white-space:nowrap}
+.links a:hover{color:var(--ink);background:var(--soft)}
+.links a.cta{background:var(--navy);color:var(--navy-ink)}
+/* abertura */
+.hero{background:var(--navy);color:var(--navy-ink)}
+.hero .in{gap:20px}
+.hero h1{font-size:clamp(34px,7.5vw,62px);max-width:14ch;letter-spacing:-.01em}
+.hero .lede{font-size:clamp(17px,2.4vw,20px);max-width:52ch}
+.hero .btns{margin-top:4px}
+.hero .primary{background:var(--navy-ink);color:var(--navy);border-color:var(--navy-ink)}
+.hero .ghost{color:var(--navy-ink);border-color:var(--navy-ink)}
+.hero a.primary,.hero a.ghost{text-decoration:none;font-weight:700;border-radius:10px;padding:12px 20px;border:1px solid}
+.ticker{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-top:14px;border-top:1px solid color-mix(in srgb,var(--navy-ink) 25%,transparent);padding-top:18px}
+.ticker b{display:block;font-family:var(--f-display);font-size:26px;font-variant-numeric:tabular-nums}
+.ticker span{font-size:14px;opacity:.85}
+/* como funciona */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:0;padding:0;list-style:none;counter-reset:st}
+.steps li{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:6px;counter-increment:st}
+.steps li::before{content:counter(st);font-family:var(--f-display);font-weight:800;font-size:30px;color:var(--amber);line-height:1}
+.steps p{margin:0;color:var(--muted);font-size:15px}
+.chapter{border-top:2px solid var(--ink);padding-top:14px;display:flex;flex-direction:column;gap:6px}
+.chapter .eyebrow{color:var(--amber);opacity:1}
+/* guia */
+.gloss{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:0 28px;margin:0}
+.gloss div{border-top:1px solid var(--line);padding-block:12px}
+.gloss dt{font-family:var(--f-display);font-weight:600;font-size:17px}
+.gloss dd{margin:2px 0 0;color:var(--muted);font-size:15px}
+.about{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.about p{margin:0}
+.sitefoot{background:var(--paper);border-top:1px solid var(--line);margin-top:56px}
+.sitefoot .in{max-width:960px;margin:0 auto;padding-block:28px;display:flex;flex-direction:column;gap:10px;font-size:13.5px;color:var(--muted);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.sitefoot .brand{font-size:17px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(28px,6vw,44px);font-weight:800}
+h2{font-size:clamp(21px,3.6vw,27px);font-weight:800}
+h3{font-size:18px;font-weight:600}
+.lede{max-width:62ch;margin:0;opacity:.92}
+.flow{display:flex;flex-wrap:wrap;gap:6px;font-family:var(--f-mono);font-size:12px;margin-top:6px}
+.flow span{border:1px solid currentColor;border-radius:999px;padding:2px 10px;opacity:.9}
+section{display:flex;flex-direction:column;gap:14px}
+.sec-head{display:flex;flex-direction:column;gap:4px}
+.sec-head p{margin:0;color:var(--muted);max-width:64ch}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px 18px}
+label{display:flex;flex-direction:column;gap:5px;font-weight:600;font-size:14px}
+label small{font-weight:400;color:var(--muted);font-size:13px}
+input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 11px;width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.note{font-size:13px;color:var(--muted);margin:0}
+.btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+button{font:inherit;font-weight:700;border-radius:10px;padding:11px 18px;cursor:pointer;border:1px solid var(--navy)}
+.primary{background:var(--navy);color:var(--navy-ink)}
+.ghost{background:transparent;color:var(--navy)}
+/* trilha */
+.trail{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0}
+.trail li{display:grid;grid-template-columns:54px 1fr;gap:12px;position:relative;padding-bottom:14px}
+.trail li:not(:last-child)::before{content:"";position:absolute;left:26px;top:34px;bottom:0;width:2px;background:var(--line)}
+.dot{width:54px;height:30px;border-radius:8px;background:var(--soft);color:var(--navy);font-family:var(--f-mono);font-size:12px;display:grid;place-items:center;font-weight:500}
+.trail .q{font-weight:600}
+.trail .fact{font-size:14px;color:var(--muted)}
+.tag{display:inline-block;font-family:var(--f-mono);font-size:11.5px;font-weight:500;padding:2px 8px;border-radius:6px;margin-right:6px;vertical-align:1px}
+.tag.sim{background:var(--sim-bg);color:var(--sim)} .tag.nao{background:var(--nao-bg);color:var(--nao)}
+.trail li.skip{opacity:.42}
+.trail li.leaf .dot{background:var(--amber);color:#1b1206}
+/* folha */
+.leafcard{background:var(--amber-bg);border:1px solid var(--amber);border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:10px}
+.leafcard .code{font-family:var(--f-mono);font-size:12px;color:var(--amber);letter-spacing:.06em}
+.leafcard ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+/* cards de produto */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.prod{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.prod .kind{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.prod .rate{font-family:var(--f-display);font-size:26px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums}
+.prod p{margin:0;font-size:14.5px}
+.pill{align-self:flex-start;font-size:12px;font-weight:700;border-radius:999px;padding:2px 10px}
+.pill.safe{background:var(--sim-bg);color:var(--sim)} .pill.risk{background:var(--nao-bg);color:var(--nao)} .pill.mid{background:var(--amber-bg);color:var(--amber)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:14px}
+.kv dt{color:var(--muted)} .kv dd{margin:0;font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right}
+.alloc{display:flex;height:16px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.alloc span{display:block}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13.5px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:0}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:520px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+td.n,th.n{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.thermo{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.metric{border-left:3px solid var(--navy);padding:4px 0 4px 12px}
+.metric b{display:block;font-family:var(--f-display);font-size:22px;font-variant-numeric:tabular-nums}
+.metric span{font-size:13px;color:var(--muted)}
+.switch{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:14px}
+.switch button{padding:6px 12px;font-size:14px}
+.switch button[aria-pressed="true"]{background:var(--navy);color:var(--navy-ink)}
+.callout{border-radius:12px;padding:14px 16px;font-size:15px}
+.callout.green{background:var(--sim-bg)} .callout.orange{background:var(--nao-bg)}
+.callout p{margin:0}
+.learn{background:var(--soft);border-radius:10px;padding:12px 14px;font-size:14.5px}
+.learn b{color:var(--navy)}
+.rules{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.rules li{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--paper)}
+.rules code{font-family:var(--f-mono);font-size:13px;color:var(--navy)}
+.rules .why{font-size:14px;color:var(--muted);margin-top:4px}
+.sources{columns:2 260px;font-size:14px;padding-left:18px;margin:0}
+.sources li{break-inside:avoid;margin-bottom:6px}
+a{color:var(--navy)}
+@media (prefers-reduced-motion:no-preference){.fade{animation:fade .45s ease both}@keyframes fade{from{opacity:.35;transform:translateY(6px)}to{opacity:1;transform:none}}}
+</style>
+</head>
+<body>
+<nav class="nav" aria-label="Principal">
+  <div class="in">
+    <a class="brand" href="#inicio"><i aria-hidden="true"></i>Rumo Investe</a>
+    <div class="links">
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#mercado">Mercado hoje</a>
+      <a href="#guia">Guia</a>
+      <a href="#sobre">Sobre</a>
+      <a href="#simulador" class="cta">Simular</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero band" id="inicio">
+  <div class="in">
+    <div class="eyebrow">FACC/UFRJ · educação financeira para universitários</div>
+    <h1>Seu primeiro investimento, explicado.</h1>
+    <p class="lede">Conte como está o seu dinheiro hoje e receba uma sugestão de onde começar: reserva, Tesouro Direto, ETFs ou ações. Cada escolha vem com o motivo, em linguagem simples.</p>
+    <div class="btns">
+      <a class="primary" href="#simulador">Começar agora</a>
+      <a class="ghost" href="#como-funciona">Como funciona</a>
+    </div>
+    <div class="ticker" aria-label="Números do mercado">
+      <div><b>13,75%</b><span>Selic ao ano, mantida em 04/11</span></div>
+      <div><b>IPCA + 7,87%</b><span>Tesouro IPCA+ 2032 em 05/11</span></div>
+      <div><b>R$ 1,00</b><span>aplicação mínima no Tesouro Reserva</span></div>
+    </div>
+  </div>
+</header>
+
+<section class="band" id="como-funciona" aria-labelledby="h-como" style="padding-bottom:20px">
+  <div class="in">
+    <div class="chapter"><span class="eyebrow">Como funciona</span><h2 id="h-como">Três passos, cerca de dois minutos</h2></div>
+    <ol class="steps">
+      <li><h3>Conte sobre você</h3><p>Renda, despesas, dívidas, reserva, objetivo e prazo. Nada é salvo nem enviado.</p></li>
+      <li><h3>Receba sua sugestão</h3><p>Uma carteira de exemplo com os produtos que fazem sentido para a sua fase, do básico ao mais arrojado.</p></li>
+      <li><h3>Entenda o porquê</h3><p>Cada pergunta, sua resposta e o motivo do passo seguinte, com as fontes dos dados de mercado.</p></li>
+    </ol>
+  </div>
+</section>
+
+<div class="wrap">
+
+<section aria-labelledby="h-anam" id="simulador">
+  <div class="chapter"><span class="eyebrow">Simulador</span></div>
+  <div class="sec-head">
+    <h2 id="h-anam">1. Conte sobre você</h2>
+    <p>Os campos já vêm preenchidos com um <b>exemplo</b>: um estudante com bolsa de estágio. Troque pelos seus números e toque em “Ver minha sugestão”.</p>
+  </div>
+  <form class="panel" id="f" novalidate>
+    <div class="grid">
+      <label for="renda">Renda mensal (R$)<small>mesada, bolsa, estágio, trabalho</small><input id="renda" type="number" min="0" step="50" value="1800"></label>
+      <label for="despesas">Despesas essenciais (R$/mês)<small>moradia, alimentação, transporte</small><input id="despesas" type="number" min="0" step="50" value="1100"></label>
+      <label for="parcelas">Parcelas de dívidas (R$/mês)<input id="parcelas" type="number" min="0" step="10" value="0"></label>
+      <label for="dividaCara">Tem dívida de juros altos?<small>rotativo do cartão, cheque especial, empréstimo pessoal caro</small>
+        <select id="dividaCara"><option value="nao">Não</option><option value="sim">Sim</option></select></label>
+      <label for="hoje">Dinheiro disponível hoje para investir (R$)<input id="hoje" type="number" min="0" step="100" value="3000"></label>
+      <label for="reserva">Reserva de emergência que já tem (R$)<input id="reserva" type="number" min="0" step="100" value="5000"></label>
+      <label for="estab">Sua renda é<select id="estab"><option value="estavel">Estável (bolsa ou estágio com contrato)</option><option value="instavel">Instável (freelas, mesada incerta)</option></select></label>
+      <label for="aporte">Aporte mensal possível (R$)<input id="aporte" type="number" min="0" step="10" value="300"></label>
+      <label for="objetivo">Objetivo<select id="objetivo">
+        <option>Independência financeira</option><option>Intercâmbio ou viagem</option><option>Pós-graduação</option><option>Comprar um bem (carro, notebook)</option><option>Entrada de um imóvel</option><option>Aposentadoria</option></select></label>
+      <label for="prazo">Prazo até usar o dinheiro (anos)<input id="prazo" type="number" min="0" max="50" step="1" value="8"></label>
+      <label for="tol">Tolerância a oscilações<select id="tol">
+        <option value="nao">Não aceito ver meu saldo cair</option>
+        <option value="mod" selected>Aceito quedas temporárias moderadas</option>
+        <option value="alta">Aceito oscilações fortes no longo prazo</option></select></label>
+      <label for="exp">Experiência com investimentos<select id="exp">
+        <option value="zero">Nunca investi</option><option value="basica" selected>Poupança, CDB ou Tesouro Selic</option><option value="media">Já investi em Tesouro e ações/ETFs</option></select></label>
+    </div>
+    <div class="btns">
+      <button type="submit" class="primary">Ver minha sugestão</button>
+      <button type="button" class="ghost" id="reset">Restaurar exemplo</button>
+    </div>
+  </form>
+</section>
+
+
+<section aria-labelledby="h-rec">
+  <div class="sec-head"><h2 id="h-rec">2. Sua sugestão</h2></div>
+  <div id="rec" class="fade"></div>
+</section>
+
+<section aria-labelledby="h-merc" id="mercado">
+  <div class="sec-head"><h2 id="h-merc">3. Como está o mercado hoje</h2>
+  <p>Dados de 04 e 05/11/2026. Taxas do Tesouro e cotações mudam todos os dias: confira antes de aplicar.</p></div>
+  <div class="panel" style="display:flex;flex-direction:column;gap:16px">
+    <div class="thermo" id="thermo"></div>
+    <div class="switch" role="group" aria-label="Cenário das ações">
+      <span>Cenário das ações:</span>
+      <button type="button" id="scAtual" aria-pressed="true" class="ghost">Atual (nov/2026)</button>
+      <button type="button" id="scCaro" aria-pressed="false" class="ghost">Simular ações caras</button>
+    </div>
+    <p class="note">A simulação mostra como o sistema reage quando nenhuma ação passa no filtro de preço: a parte de ações sai da sugestão e o Tesouro Direto assume.</p>
+  </div>
+</section>
+
+<section aria-labelledby="h-sim" id="secSim">
+  <div class="sec-head"><h2 id="h-sim">4. Quanto o dinheiro pode virar</h2>
+  <p id="simIntro"></p></div>
+  <div class="panel tablewrap" id="sim"></div>
+</section>
+
+<section aria-labelledby="h-emb">
+  <div class="sec-head"><h2 id="h-emb">5. Por que essa sugestão</h2>
+  <p>As perguntas que levaram até a sua sugestão, com a sua resposta e o motivo de cada passo. O site ajuda a decidir; a decisão final é sua.</p></div>
+  <ul class="rules" id="rules"></ul>
+  <div class="panel">
+    <h3 style="margin-bottom:10px">Fontes de mercado consultadas</h3>
+    <ol class="sources">
+      <li><a href="https://www.metropoles.com/brasil/copom-mantem-taxa-selic-e-juros-ficam-em-1375-ao-ano" target="_blank" rel="noopener">Metrópoles: Copom mantém Selic em 13,75% (04/11/2026)</a></li>
+      <li><a href="https://www.nomadglobal.com/portal/analises/analise-do-copom-novembro-de-2026" target="_blank" rel="noopener">Nomad: análise do Copom de novembro/2026</a></li>
+      <li><a href="https://www.moneytimes.com.br/selic-estacionou-mas-taxas-do-tesouro-direto-sobem-apos-copom-mlim/" target="_blank" rel="noopener">Money Times: taxas do Tesouro Direto em 05/11/2026</a></li>
+      <li><a href="https://www.infomoney.com.br/onde-investir/tesouro-direto-abertura-fechamento-05112026/" target="_blank" rel="noopener">InfoMoney: Tesouro Direto às 11h54 de 05/11/2026</a></li>
+      <li><a href="https://euqueroinvestir.com/tesouro-direto/tesouro-direto-hoje-prefixados-caem-copom" target="_blank" rel="noopener">EuQueroInvestir: marcação a mercado do IPCA+ 2050</a></li>
+      <li><a href="https://investidor10.com.br/acoes/bbas3/" target="_blank" rel="noopener">Investidor10: indicadores de BBAS3</a></li>
+      <li><a href="https://renovainvest.com.br/acoes/bbas3/" target="_blank" rel="noopener">Renova Invest: P/L e P/VP de BBAS3</a></li>
+      <li><a href="https://conteudos.xpi.com.br/acoes/bbas3/" target="_blank" rel="noopener">XP: recomendação e riscos de BBAS3</a></li>
+      <li><a href="https://renovainvest.com.br/acoes/petr4/" target="_blank" rel="noopener">Renova Invest: indicadores de PETR4</a></li>
+      <li><a href="https://renovainvest.com.br/acoes/bbse3/" target="_blank" rel="noopener">Renova Invest: indicadores de BBSE3</a></li>
+      <li><a href="https://renovainvest.com.br/acoes/wege3/" target="_blank" rel="noopener">Renova Invest: indicadores de WEGE3</a></li>
+      <li><a href="https://analisa.genialinvestimentos.com.br/carteiras-recomendadas/renda-variavel/carteira-recomendada-de-acoes-novembro-de-2026/" target="_blank" rel="noopener">Genial: carteira recomendada de novembro/2026</a></li>
+      <li><a href="https://www.etfsbrasil.com.br/etfs/ivvb11" target="_blank" rel="noopener">ETFs Brasil: ficha do IVVB11</a></li>
+      <li><a href="https://rankia.com.br/focus-selic-13-25-fim-2026-corte-novembro-ipca-5-22/" target="_blank" rel="noopener">Rankia: Boletim Focus (IPCA 2026)</a></li>
+      <li><a href="https://www.tesourodireto.com.br" target="_blank" rel="noopener">Tesouro Direto: taxas oficiais do dia</a></li>
+    </ol>
+  </div>
+</section>
+
+<section id="guia" aria-labelledby="h-guia" style="margin-top:28px">
+  <div class="chapter"><span class="eyebrow">Guia rápido</span><h2 id="h-guia">Os termos que aparecem no simulador</h2></div>
+  <dl class="gloss">
+    <div><dt>Reserva de emergência</dt><dd>Dinheiro guardado para imprevistos, de 6 a 12 meses das suas despesas, numa aplicação segura que você resgata no mesmo dia.</dd></div>
+    <div><dt>Selic</dt><dd>A taxa básica de juros do Brasil, definida pelo Copom a cada 45 dias. Serve de referência para quase toda a renda fixa.</dd></div>
+    <div><dt>Tesouro Selic e Tesouro Reserva</dt><dd>Títulos do governo que rendem a Selic e quase não oscilam. Os mais indicados para reserva e prazos curtos.</dd></div>
+    <div><dt>Tesouro Prefixado</dt><dd>Você trava uma taxa fixa hoje e sabe exatamente quanto recebe se ficar até o vencimento.</dd></div>
+    <div><dt>Tesouro IPCA+</dt><dd>Paga a inflação mais um ganho real fixo. Protege o poder de compra no longo prazo.</dd></div>
+    <div><dt>Marcação a mercado</dt><dd>O preço diário dos títulos. Quem vende antes do vencimento pode ganhar ou perder; quem leva até o fim recebe a taxa contratada.</dd></div>
+    <div><dt>ETF</dt><dd>Um fundo negociado na bolsa que copia um índice. O IVVB11, por exemplo, investe nas 500 maiores empresas dos EUA.</dd></div>
+    <div><dt>P/L</dt><dd>Preço da ação dividido pelo lucro por ação. Quantos anos de lucro o preço paga; quanto menor, mais barata parece.</dd></div>
+    <div><dt>P/VP</dt><dd>Preço dividido pelo patrimônio por ação. Abaixo de 1, a ação custa menos que o patrimônio da empresa.</dd></div>
+    <div><dt>Dividend yield</dt><dd>Quanto a empresa pagou em dividendos nos últimos 12 meses, em percentual do preço da ação.</dd></div>
+  </dl>
+</section>
+
+<section id="sobre" aria-labelledby="h-sobre">
+  <div class="chapter"><span class="eyebrow">Sobre</span><h2 id="h-sobre">Um projeto da FACC/UFRJ</h2></div>
+  <div class="about">
+    <p>O Rumo Investe nasceu de uma árvore de decisão construída na Faculdade de Administração e Ciências Contábeis da UFRJ para apoiar estudantes que querem começar a investir. As perguntas seguem a ordem de prioridade do planejamento financeiro: orçamento, dívidas, reserva, prazo e tolerância a risco.</p>
+    <p>Os dados de mercado são de 04 e 05/11/2026 e vêm de fontes públicas listadas no simulador. O site apoia a decisão e ensina o raciocínio; quem decide é você. Antes de aplicar, confira as taxas do dia no site do Tesouro Direto ou na sua corretora.</p>
+  </div>
+</section>
+</div>
+
+<footer class="sitefoot">
+  <div class="in">
+    <a class="brand" href="#inicio"><i aria-hidden="true"></i>Rumo Investe</a>
+    <p style="margin:0">Projeto educacional ligado à FACC/UFRJ. Não é recomendação individual de investimento nem consultoria regulada pela CVM. Rentabilidade passada não garante resultado futuro. O Boletim Focus contextualiza cenários e não prevê resultados garantidos.</p>
+  </div>
+</footer>
+
+<script>
+/* ===== Base de conhecimento: dados de mercado (datados) ===== */
+const MKT = {
+  data: "05/11/2026",
+  selic: 13.75, proxCopom: "09/12/2026",
+  ipcaFocus2026: 5.22,
+  ipcaPremissa: 4.5, // premissa de longo prazo usada só na simulação
+  tesouro: {
+    reserva: {nome:"Tesouro Reserva 2036", taxa:"Selic", min:"R$ 1,00", venc:"01/01/2036"},
+    selic:   {nome:"Tesouro Selic 2031", taxa:"Selic + 0,1064%", spread:0.1064, min:"R$ 201,50", venc:"01/03/2031"},
+    pre29:   {nome:"Tesouro Prefixado 2029", taxa:"14,94% a.a.", t:14.94, min:"R$ 7,43", venc:"01/01/2029", anos:2.2},
+    pre32:   {nome:"Tesouro Prefixado 2032", taxa:"15,24% a.a.", t:15.24, min:"R$ 4,81", venc:"01/01/2032", anos:5.2},
+    ipca32:  {nome:"Tesouro IPCA+ 2032", taxa:"IPCA + 7,87%", real:7.87, min:"R$ 30,82", venc:"15/08/2032", anos:5.8},
+    ipca40:  {nome:"Tesouro IPCA+ 2040", taxa:"IPCA + 7,62%", real:7.62, min:"R$ 17,46", venc:"15/08/2040", anos:13.8}
+  },
+  acoes: [
+    {tk:"BBAS3", nome:"Banco do Brasil", setor:"Banco estatal", preco:16.57, pl:7.74, pvp:0.51, dy:4.14, roe:7.8, data:"05/11",
+     porque:"Negocia perto da mínima de 52 semanas (R$ 16,46; máxima R$ 27,58), cerca de 25% abaixo de um ano atrás e a metade do valor patrimonial.",
+     risco:"O desconto reflete lucros em queda (inadimplência no agro) e risco de interferência política. A XP está neutra (preço-alvo R$ 21 para o fim de 2026) e o JPMorgan rebaixou para venda. Resultado do 3º trimestre em 11–12/11."},
+    {tk:"PETR4", nome:"Petrobras", setor:"Petróleo e gás", preco:48.64, pl:4.70, pvp:1.36, dy:8.9, roe:27.7, data:"04/11",
+     porque:"P/L abaixo de 5 com ROE alto e dividendos perto de 9% em 12 meses. Receita atrelada ao dólar.",
+     risco:"Depende do preço do petróleo, que pode cair se os conflitos no Oriente Médio esfriarem, e de decisões do governo controlador sobre preços e dividendos. A ação caiu 4% num único dia nesta semana."},
+    {tk:"BBSE3", nome:"BB Seguridade", setor:"Seguros", preco:37.91, pl:8.07, pvp:5.44, dy:12.1, roe:68.2, data:"05/11",
+     porque:"P/L de 8 com dividendos de cerca de 12% em 12 meses e rentabilidade muito alta. O P/VP é alto porque seguradoras têm pouco patrimônio, não por preço esticado.",
+     risco:"Depende da rede de agências do Banco do Brasil para vender seguros e tem o mesmo controlador estatal. Lucros de seguradora caem quando os juros caem."}
+  ],
+  curiosidade: {tk:"WEGE3", nome:"WEG", preco:47.92, pl:33.51, pvp:10.53, dy:4.4, roe:31.4, data:"05/11/2026"},
+  ivvb11: {taxa:0.23, gestor:"BlackRock", indice:"S&P 500"}
+};
+const SCEN_CARO = {pl:1.8, pvp:2.5, dy:0.5}; // multiplicadores do cenário simulado
+const FILTRO = {pl:10, pvp:1, dy:8};
+const passa = a => a.pl < FILTRO.pl && (a.pvp < FILTRO.pvp || a.dy >= FILTRO.dy);
+let cenario = "atual";
+
+/* ===== Parâmetros das regras ===== */
+const P = {mesesReservaEstavel:6, mesesReservaInstavel:12, prazoCurto:2, prazoLongo:5, juroRealAlto:6};
+
+const $ = id => document.getElementById(id);
+const brl = v => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL",maximumFractionDigits:0});
+const pct = (v,d=2) => v.toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d})+"%";
+const num = id => Math.max(0, parseFloat($(id).value)||0);
+
+function fatos(){
+  return {renda:num("renda"), despesas:num("despesas"), parcelas:num("parcelas"), dividaCara:$("dividaCara").value,
+    hoje:num("hoje"), reserva:num("reserva"), estab:$("estab").value, aporte:num("aporte"),
+    objetivo:$("objetivo").value, prazo:num("prazo"), tol:$("tol").value, exp:$("exp").value};
+}
+
+/* ===== Motor de inferência (encadeamento para frente na árvore) ===== */
+function inferir(F){
+  const trilha=[], regras=[];
+  const sobra = F.renda - F.despesas - F.parcelas;
+  const meses = F.estab==="estavel"?P.mesesReservaEstavel:P.mesesReservaInstavel;
+  const metaRes = meses*F.despesas;
+
+  const n1 = sobra>0 || F.hoje>0;
+  trilha.push({no:"Nó 1", q:"Depois das despesas essenciais, sobra dinheiro para investir?", r:n1,
+    fato:`Sobra mensal = ${brl(F.renda)} − ${brl(F.despesas)} − ${brl(F.parcelas)} = ${brl(sobra)}; disponível hoje ${brl(F.hoje)}.`});
+  regras.push({c:"R1", t:"SE sobra mensal ≤ 0 E não há dinheiro disponível ENTÃO Folha A (preparação financeira)", ok:!n1,
+    why:"Investir com orçamento negativo leva a resgates forçados e a novas dívidas."});
+  if(!n1) return {folha:"A", trilha, regras, sobra, metaRes, meses, usado:0, investivel:0};
+
+  const n2 = F.dividaCara==="sim";
+  trilha.push({no:"Nó 2", q:"Há dívidas de juros altos em aberto?", r:n2, fato:`Dívida cara informada: ${n2?"sim":"não"}.`});
+  regras.push({c:"R2", t:"SE existe dívida de juros altos ENTÃO Folha B (quitar ou renegociar antes de investir)", ok:n2,
+    why:`Rotativo do cartão e cheque especial costumam custar várias vezes a Selic (${pct(MKT.selic)} a.a.). Quitar a dívida rende mais do que qualquer aplicação segura.`});
+  if(n2) return {folha:"B", trilha, regras, sobra, metaRes, meses, usado:0, investivel:0};
+
+  const n3 = F.reserva + F.hoje >= metaRes;
+  const usado = n3 ? Math.max(0, metaRes - F.reserva) : 0;
+  const investivel = n3 ? F.hoje - usado : 0;
+  trilha.push({no:"Nó 3", q:"A reserva de emergência está adequada à sua situação?", r:n3,
+    fato:`Reserva ${brl(F.reserva)} + dinheiro disponível ${brl(F.hoje)} = ${brl(F.reserva+F.hoje)}, contra a meta de ${brl(metaRes)} (${meses} meses de despesas, renda ${F.estab==="estavel"?"estável":"instável"}).${usado>0?` ${brl(usado)} completam a reserva e ${brl(investivel)} ficam livres para investir.`:""}`});
+  regras.push({c:"R3", t:`SE reserva < ${meses} × despesas essenciais ENTÃO Folha C (formar reserva em baixo risco e alta liquidez)`, ok:!n3,
+    why:`O dinheiro que você já tem disponível conta para completar a reserva. Parâmetro: ${P.mesesReservaEstavel} meses para renda estável e ${P.mesesReservaInstavel} para instável, heurística usual de planejamento financeiro. Sem reserva, um imprevisto obriga a vender investimentos na hora errada.`});
+  if(!n3) return {folha:"C", trilha, regras, sobra, metaRes, meses, usado, investivel};
+
+  const n4 = F.prazo <= P.prazoCurto;
+  trilha.push({no:"Nó 4", q:"Você vai precisar desse dinheiro em até 2 anos?", r:n4, fato:`Prazo informado: ${F.prazo} ano(s).`});
+  regras.push({c:"R4", t:"SE prazo ≤ 2 anos ENTÃO Folha D (renda fixa com liquidez compatível)", ok:n4,
+    why:"Em prazos curtos não há tempo para recuperar uma queda; a prioridade é preservar o valor e poder resgatar."});
+  if(n4) return {folha:"D", trilha, regras, sobra, metaRes, meses, usado, investivel};
+
+  const n5 = F.tol!=="nao";
+  trilha.push({no:"Nó 5", q:"Você aceita oscilações e pode suportar perdas sem comprometer seus objetivos?", r:n5,
+    fato:`Tolerância declarada: ${$("tol").selectedOptions[0].text}.`});
+  regras.push({c:"R5", t:"SE não aceita oscilações ENTÃO Folha E (renda fixa diversificada compatível com prazo e liquidez)", ok:!n5,
+    why:"Perfil conservador: retorno previsível vem antes de retorno potencial."});
+  if(!n5) return {folha:"E", trilha, regras, sobra, metaRes, meses, usado, investivel};
+
+  const n6 = F.prazo >= P.prazoLongo;
+  trilha.push({no:"Nó 6", q:"O horizonte de investimento é de pelo menos 5 anos?", r:n6, fato:`Prazo informado: ${F.prazo} anos.`});
+  regras.push({c:"R6", t:"SE aceita oscilações E prazo ≥ 5 anos ENTÃO Folha F (carteira diversificada: renda fixa + parcela de renda variável)", ok:n6,
+    why:"Ações e ETFs oscilam muito em janelas curtas; em 5 anos ou mais há tempo para atravessar quedas."});
+  regras.push({c:"R7", t:"SE aceita oscilações E prazo entre 2 e 5 anos ENTÃO Folha G (renda fixa diversificada; reavaliar renda variável depois)", ok:!n6,
+    why:"Horizonte intermediário: a oscilação de ações ainda pode coincidir com a data de uso do dinheiro."});
+  return {folha: n6?"F":"G", trilha, regras, sobra, metaRes, meses, usado, investivel};
+}
+
+/* ===== Regras de mercado ===== */
+function mercado(){
+  const acoes = MKT.acoes.map(a => cenario==="caro" ? {...a, pl:a.pl*SCEN_CARO.pl, pvp:a.pvp*SCEN_CARO.pvp, dy:a.dy*SCEN_CARO.dy} : a)
+    .map(a => ({...a, ok:passa(a)}));
+  const baratas = acoes.filter(a=>a.ok);
+  const juroReal = MKT.tesouro.ipca32.real;
+  const rfForte = juroReal >= P.juroRealAlto;
+  return {acoes, baratas, juroReal, rfForte};
+}
+
+/* ===== Escolha de ações: até 2 para quem aceita quedas temporárias; até 3 para oscilações fortes com experiência ===== */
+function escolher(F, m, max){
+  if(F.tol==="nao") return [];
+  const lim = max ?? ((F.tol==="alta" && F.exp!=="zero") ? 3 : 2);
+  return m.baratas.slice().sort((x,y)=>y.dy-x.dy).slice(0, lim);
+}
+const CORES = ["var(--nao)","#8B5CF6","#0EA5A4"];
+function barra(partes){
+  return `<div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+    <div class="alloc" role="img" aria-label="Distribuição sugerida">${partes.map(p=>`<span style="width:${p.v}%;background:${p.c}"></span>`).join("")}</div>
+    <div class="legend">${partes.map(p=>`<span><i style="background:${p.c}"></i>${p.n} ${p.v}%</span>`).join("")}</div></div>`;
+}
+function linhaReserva(res){
+  return res.usado>0 ? `<li>Reserva completa: ${brl(res.usado)} do dinheiro de hoje vão para o Tesouro Reserva ou Selic e ${brl(res.investivel)} seguem para a carteira abaixo.</li>` : "";
+}
+
+/* ===== Cartões de produto ===== */
+const T = MKT.tesouro;
+function cardTesouro(t, extra, pill="safe", pillTxt="Risco soberano"){
+  return `<div class="prod"><span class="kind">Tesouro Direto</span><h3>${t.nome}</h3>
+  <div class="rate">${t.taxa}</div><span class="pill ${pill}">${pillTxt}</span>
+  <dl class="kv"><dt>Vencimento</dt><dd>${t.venc}</dd><dt>Aplicação mínima</dt><dd>${t.min}</dd></dl><p>${extra}</p></div>`;
+}
+function cardIVVB(){
+  return `<div class="prod"><span class="kind">ETF · renda variável</span><h3>IVVB11</h3>
+  <div class="rate">S&amp;P 500</div><span class="pill risk">Oscila com bolsa e dólar</span>
+  <dl class="kv"><dt>Gestora</dt><dd>${MKT.ivvb11.gestor}</dd><dt>Taxa de adm.</dt><dd>${pct(MKT.ivvb11.taxa)} a.a.</dd></dl>
+  <p>Uma cota compra uma fatia das 500 maiores empresas dos EUA, negociada na B3. Diversifica país e moeda: ganha quando o dólar sobe e perde quando o real se valoriza.</p></div>`;
+}
+const fx = (v,d=2) => v.toFixed(d).replace(".",",");
+function cardAcao(a){
+  return `<div class="prod"><span class="kind">Ação · ${a.setor}</span><h3>${a.nome} (${a.tk})</h3>
+  <div class="rate">${brl2(a.preco)}</div>
+  <span class="pill risk">Sugerida · risco alto</span>
+  <dl class="kv"><dt>P/L</dt><dd>${fx(a.pl)}</dd><dt>P/VP</dt><dd>${fx(a.pvp)}</dd>
+  <dt>Dividend yield 12m</dt><dd>${pct(a.dy,1)}</dd><dt>ROE</dt><dd>${pct(a.roe,1)}</dd><dt>Dados de</dt><dd>${a.data}/2026${cenario==="caro"?" (simulado)":""}</dd></dl>
+  <p><b>Por que parece barata:</b> ${a.porque}</p>
+  <p><b>Por que cuidado:</b> ${a.risco}</p></div>`;
+}
+const brl2 = v => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+
+function learn(F, txt){ return F.exp==="media" ? "" : `<div class="learn">${txt}</div>`; }
+
+/* ===== Folhas ===== */
+function renderFolha(res, F, m){
+  const L = {
+    A:["Folha A","Preparação financeira","Antes de investir, o orçamento precisa fechar no positivo."],
+    B:["Folha B","Quitar ou renegociar a dívida","A dívida cara custa mais do que qualquer investimento rende."],
+    C:["Folha C","Formar ou completar a reserva","Primeiro um colchão para imprevistos, em aplicação segura e de resgate imediato."],
+    D:["Folha D","Renda fixa com liquidez compatível","Você vai usar o dinheiro em breve: segurança e resgate fácil vêm primeiro."],
+    E:["Folha E","Renda fixa diversificada, compatível com prazo","Retorno previsível sem expor o dinheiro à bolsa."],
+    F:["Folha F","Carteira diversificada","Base em Tesouro Direto e uma parcela de renda variável ajustada ao seu perfil."],
+    G:["Folha G","Renda fixa diversificada com primeiras ações","Base em Tesouro com vencimento perto do seu objetivo e uma fatia pequena em ações para começar na bolsa."]
+  }[res.folha];
+  let out = `<div class="leafcard"><span class="code">SEU OBJETIVO: ${F.objetivo.toUpperCase()} · ${F.prazo} ANO(S)</span><h2>${L[1]}</h2><p style="margin:0">${L[2]}</p>`;
+  let cards="", extra="";
+  const falta = Math.max(0,res.metaRes-F.reserva);
+  const sobra = res.sobra;
+
+  if(res.folha==="A"){
+    out += `<ul><li>Liste todos os gastos do mês e corte os não essenciais até sobrar algum valor.</li>
+    <li>Procure renda extra compatível com a faculdade (monitoria, iniciação científica, estágio).</li>
+    <li>Não aplique agora: volte ao app quando a sobra mensal ficar positiva.</li></ul>`;
+  }
+  if(res.folha==="B"){
+    out += `<ul><li>Troque o rotativo ou o cheque especial por um crédito mais barato (renegociação ou consignado estudantil, se houver).</li>
+    <li>Use o dinheiro disponível (${brl(F.hoje)}) para abater a dívida mais cara primeiro.</li>
+    <li>Depois de quitar, rode a análise de novo para formar a reserva.</li></ul>`;
+  }
+  if(res.folha==="C"){
+    const mesesP = F.aporte>0 ? Math.ceil(Math.max(0,falta-F.hoje)/F.aporte) : null;
+    out += `<ul><li>Meta de reserva: <b>${brl(res.metaRes)}</b> (${res.meses} meses de despesas). Faltam <b>${brl(falta)}</b>.</li>
+    <li>${F.hoje>0?`Coloque os ${brl(F.hoje)} de hoje na reserva. `:""}${mesesP!==null?`Com ${brl(F.aporte)} por mês, a reserva fica completa em cerca de ${mesesP} meses.`:"Defina um aporte mensal para completar a reserva."}</li>
+    <li>Aplicações indicadas: Tesouro Reserva ou Tesouro Selic, que seguem a Selic e podem ser resgatadas em qualquer dia útil.</li></ul>`;
+    cards = cardTesouro(T.reserva,"Feito para reserva: aplicação a partir de R$ 1 e acompanha a Selic.") + cardTesouro(T.selic,"Rende a Selic mais um pequeno prêmio e quase não oscila de preço.");
+  }
+  if(res.folha==="D"){
+    out += `<ul><li>Prefira títulos pós-fixados: rendem a Selic (${pct(MKT.selic)} a.a.) e quase não oscilam.</li>
+    <li>Se o dinheiro tem data certa perto de jan/2029, o Prefixado 2029 trava a taxa, mas só vale se você ficar até o vencimento.</li>
+    <li>CDB de liquidez diária de banco grande também serve; confira o emissor e a cobertura do FGC.</li></ul>`;
+    cards = cardTesouro(T.selic,"Principal opção para prazo curto: liquidez diária e oscilação mínima.") + cardTesouro(T.reserva,"Alternativa para valores pequenos, a partir de R$ 1.");
+  }
+  if(res.folha==="E"){
+    out += `<ul><li>Divida entre Tesouro Selic (liquidez) e um título com vencimento perto da data do seu objetivo.</li>
+    <li>Os juros estão altos: o Tesouro IPCA+ 2032 paga ${T.ipca32.taxa}, um ganho real raro na história.</li>
+    <li>Leve até o vencimento: vendido antes, o preço oscila (marcação a mercado).</li></ul>`;
+    cards = cardTesouro(T.selic,"Parte de liquidez da carteira.") + cardTesouro(T.ipca32,"Protege da inflação e garante juro real alto se levado ao vencimento.","mid","Seguro no vencimento") + cardTesouro(T.pre29,"Taxa travada para quem tem objetivo perto de 2029.","mid","Seguro no vencimento");
+  }
+  if(res.folha==="G"){
+    const picks = escolher(F, m, 2);
+    const cada = 4, acoesPct = picks.length*cada, rf = 100-acoesPct;
+    const pre = Math.round(rf*0.45), ipca = Math.round(rf*0.3), sel = rf-pre-ipca;
+    out += `<ul>${linhaReserva(res)}
+    <li>Distribuição de exemplo: <b>${rf}% em Tesouro</b>${picks.length?` e <b>${acoesPct}% em ações</b>`:""}.</li>
+    <li>Combine Tesouro Selic com Prefixado 2029 ou IPCA+ 2032, conforme a data do objetivo. Levados ao vencimento, pagam a taxa contratada.</li>
+    <li>${picks.length?`Como a reserva está completa e você aceita quedas temporárias, <b>${picks.map(a=>a.tk).join(" e ")}</b> entram com ${cada}% cada para você começar na bolsa. Foram escolhidas pelos maiores dividendos entre as ações descontadas: pagam renda enquanto você aprende.`:"Nenhuma ação passou no filtro de preço agora: a carteira fica toda em Tesouro até a bolsa voltar a ficar atraente."}</li>
+    <li>Com ${F.prazo} anos de prazo, a parte em ações fica pequena: se a bolsa cair perto da data do objetivo, o estrago é limitado.</li></ul>`
+    + barra([{n:"Tesouro Prefixado 2029",v:pre,c:"var(--navy)"},{n:"Tesouro IPCA+ 2032",v:ipca,c:"var(--amber)"},{n:"Tesouro Selic",v:sel,c:"var(--sim)"}, ...picks.map((a,k)=>({n:a.tk,v:cada,c:CORES[k]}))]);
+    cards = cardTesouro(T.pre29,"Trava 14,94% a.a. até jan/2029.","mid","Seguro no vencimento") + cardTesouro(T.ipca32,"Juro real elevado, ideal se o objetivo for perto de 2032.","mid","Seguro no vencimento") + cardTesouro(T.selic,"Parte de liquidez e segurança.") + picks.map(cardAcao).join("");
+    extra = learn(F,`<b>P/VP e P/L:</b> quanto o mercado paga pelo patrimônio e pelo lucro da empresa. Números baixos indicam preço descontado, mas o desconto pode ter motivo.<br><b>Dividend yield:</b> quanto a empresa pagou em dividendos no último ano, em percentual do preço.`);
+  }
+  if(res.folha==="F"){
+    // alocação: renda variável limitada quando renda fixa paga juro real alto
+    let rv = F.tol==="alta" ? 35 : 25;
+    if(m.rfForte) rv -= 10;
+    if(F.exp==="zero") rv = Math.min(rv, 20);
+    const picks = escolher(F, m);
+    const cada = picks.length===3 ? 3 : 4;
+    const bb = cada*picks.length;
+    const ivvb = rv - bb;
+    const rf = 100 - rv;
+    const ipca = Math.round(rf*0.6), selic = rf-ipca;
+    out += `<ul>${linhaReserva(res)}
+      <li>Distribuição de exemplo: <b>${rf}% em Tesouro</b> e <b>${rv}% em renda variável</b>.</li>
+      <li>${m.rfForte?`A parte em bolsa ficou menor porque o Tesouro IPCA+ paga ${pct(m.juroReal)} acima da inflação, acima do limite de ${P.juroRealAlto}% definido nas regras. Hoje a renda fixa compete forte com a bolsa.`:"Com juro real abaixo do limite das regras, a renda variável recebe a parcela cheia."}</li>
+      <li>${picks.length?`Para começar em ações: <b>${picks.map(a=>a.tk).join(", ")}</b>, com ${cada}% cada. ${F.tol==="alta"&&F.exp!=="zero"?"Você aceita oscilações fortes e já tem experiência, por isso entram até três.":"Como você aceita quedas temporárias, entram até duas, escolhidas pelos maiores dividendos entre as ações descontadas."} O ETF IVVB11 completa a parte em bolsa.`:"Nenhuma ação passou no filtro de preço: a sugestão não inclui ações individuais e o Tesouro assume."}</li>
+      <li>Invista o aporte de ${brl(F.aporte)} todo mês na mesma proporção. Isso dilui o risco de entrar num dia ruim.</li></ul>`
+      + barra([{n:"Tesouro IPCA+",v:ipca,c:"var(--navy)"},{n:"Tesouro Selic",v:selic,c:"var(--sim)"},{n:"IVVB11",v:ivvb,c:"var(--amber)"}, ...picks.map((a,k)=>({n:a.tk,v:cada,c:CORES[k]}))]);
+    cards = cardTesouro(T.ipca40,"Base de longo prazo: protege da inflação e trava juro real alto.","mid","Seguro no vencimento")
+      + cardTesouro(T.selic,"Parte de liquidez para rebalancear e aproveitar quedas da bolsa.")
+      + cardIVVB() + (m.baratas.length ? "" : `<div class="prod"><span class="kind">Ações individuais</span><h3>Nenhuma no filtro agora</h3><p>No cenário simulado, todas as ações do banco de dados ficam acima dos limites das regras. Quando a bolsa está cara, o sistema aponta o Tesouro: hoje ele paga ${T.ipca40.taxa} no IPCA+ 2040 e ${T.pre32.taxa} no Prefixado 2032.</p></div>`)
+      + picks.map(cardAcao).join("");
+    extra = learn(F,`<b>O que é ETF?</b> Um fundo negociado na bolsa como se fosse uma ação, que copia um índice. Com uma cota você fica exposto a centenas de empresas de uma vez, o que reduz o risco de depender de uma só.<br><b>P/VP e P/L:</b> quanto o mercado paga pelo patrimônio e pelo lucro da empresa. Números baixos indicam preço descontado, mas o desconto pode ter motivo.`);
+    const w = MKT.curiosidade;
+    extra += `<div class="panel" style="display:flex;flex-direction:column;gap:10px">
+      <span class="eyebrow" style="color:var(--amber);opacity:1">Curiosidade</span>
+      <h3>WEG (WEGE3): de Jaraguá do Sul para o mundo</h3>
+      <p style="margin:0">A WEG nasceu em 1961 em Jaraguá do Sul (SC), fundada por um eletricista, um administrador e um mecânico. O nome junta as iniciais dos três: Werner, Eggon e Geraldo. Hoje é uma das maiores fabricantes de motores elétricos do mundo, com fábricas em vários países.</p>
+      <ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px">
+        <li>Fabrica motores, geradores, transformadores, automação industrial e tintas.</li>
+        <li>Fornece equipamentos para energia eólica e solar, carros elétricos e redes de transmissão.</li>
+        <li>Grande parte da receita vem de fora do Brasil.</li>
+        <li>Rentabilidade (ROE) de ${pct(w.roe,1)}, uma das mais altas entre as indústrias da bolsa.</li>
+      </ul>
+      <dl class="kv"><dt>Cotação</dt><dd>${brl2(w.preco)}</dd><dt>P/L</dt><dd>${fx(w.pl)}</dd><dt>P/VP</dt><dd>${fx(w.pvp)}</dd><dt>Dividend yield 12m</dt><dd>${pct(w.dy,1)}</dd><dt>Dados de</dt><dd>${w.data}</dd></dl>
+    </div>`;
+  }
+  out += `</div>`;
+  const safeBox = (res.folha!=="A" && res.folha!=="B") ? `<div class="callout green"><p><b>Por que o Tesouro Direto é seguro:</b> os títulos são emitidos pelo Tesouro Nacional, o emissor de menor risco de crédito do país. Bancos e empresas dependem dele, e o FGC cobre CDBs só até R$ 250 mil. Levado até o vencimento, o título paga exatamente a taxa contratada. Antes disso, prefixados e IPCA+ podem oscilar: em 05/11/2026 o IPCA+ 2050 caiu 1,71% num único dia. Por isso o vencimento deve combinar com o seu prazo.</p></div>` : "";
+  const baseLearn = (res.folha==="C"||res.folha==="D"||res.folha==="E"||res.folha==="G") ? learn(F,`<b>Selic, prefixado e IPCA+:</b> o Tesouro Selic acompanha a taxa básica de juros; o prefixado trava uma taxa fixa; o IPCA+ paga a inflação mais um ganho real. Os três têm IR regressivo: 22,5% até 6 meses e 15% acima de 2 anos, cobrado só sobre o lucro.`) : "";
+  $("rec").innerHTML = out + (cards?`<div class="cards" style="margin-top:14px">${cards}</div>`:"") + `<div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">${extra}${baseLearn}${safeBox}</div>`;
+}
+
+function renderTrail(res){
+  const all=["Nó 1","Nó 2","Nó 3","Nó 4","Nó 5","Nó 6"];
+  const qs={"Nó 1":"Sobra dinheiro depois das despesas essenciais?","Nó 2":"Há dívidas de juros altos?","Nó 3":"A reserva de emergência está adequada?","Nó 4":"Vai precisar do dinheiro em até 2 anos?","Nó 5":"Aceita oscilações e possíveis perdas?","Nó 6":"Horizonte de pelo menos 5 anos?"};
+  let h="";
+  all.forEach(no=>{
+    const t=res.trilha.find(x=>x.no===no);
+    if(t) h+=`<li><span class="dot">${no.replace("Nó ","N")}</span><div><div class="q">${t.q}</div><div class="fact"><span class="tag ${t.r?"sim":"nao"}">${t.r?"SIM":"NÃO"}</span>${t.fato}</div></div></li>`;
+    else h+=`<li class="skip"><span class="dot">${no.replace("Nó ","N")}</span><div><div class="q">${qs[no]}</div><div class="fact">Não avaliado: o motor parou antes.</div></div></li>`;
+  });
+  h+=`<li class="leaf"><span class="dot">${res.folha}</span><div><div class="q">Folha ${res.folha} alcançada</div><div class="fact">Recomendação abaixo.</div></div></li>`;
+  $("trail").innerHTML=h;
+}
+
+function renderThermo(m){
+  $("thermo").innerHTML = `
+  <div class="metric"><b>${pct(MKT.selic)}</b><span>Selic, mantida pelo Copom em 04/11; próxima reunião ${MKT.proxCopom}</span></div>
+  <div class="metric"><b>IPCA + ${pct(m.juroReal)}</b><span>Juro real do Tesouro IPCA+ 2032 em 05/11</span></div>
+  <div class="metric"><b>${pct(MKT.ipcaFocus2026)}</b><span>IPCA esperado para 2026 (Focus de 13/10), acima do teto da meta</span></div>
+  <div class="metric"><b>${m.baratas.length} de ${m.acoes.length}</b><span>ações do banco de dados no filtro de preço${cenario==="caro"?" (cenário simulado)":""}: ${m.baratas.map(a=>a.tk).join(", ")||"nenhuma"}</span></div>`;
+}
+
+function renderSim(res, F){
+  const show = res.folha!=="A" && res.folha!=="B";
+  $("secSim").hidden = !show;
+  if(!show) return;
+  const anos = Math.max(1, Math.min(F.prazo||1, 30));
+  const inicial = res.folha==="C" ? Math.min(F.hoje, Math.max(0,res.metaRes-F.reserva)) : res.investivel;
+  const opts = [
+    {n:"Tesouro Selic", a: MKT.selic + T.selic.spread, obs:"Selic constante em 13,75% (premissa)"},
+    {n:"Tesouro Prefixado 2032", a: T.pre32.t, obs:"taxa travada; vale até o vencimento"},
+    {n:"Tesouro IPCA+ 2040", a: ((1+T.ipca40.real/100)*(1+MKT.ipcaPremissa/100)-1)*100, obs:`IPCA médio de ${pct(MKT.ipcaPremissa,1)} (premissa)`},
+    {n:"Poupança (comparação)", a: ((1+0.005)**12-1)*100, obs:"0,5% ao mês + TR (TR ignorada)", isento:true}
+  ];
+  const ir = anos>2?0.15:anos>1?0.175:0.20;
+  let rows="";
+  opts.forEach(o=>{
+    const i=(1+o.a/100)**(1/12)-1, n=anos*12;
+    const fv = inicial*(1+i)**n + (i>0? F.aporte*(((1+i)**n-1)/i) : F.aporte*n);
+    const inv = inicial + F.aporte*n;
+    const liq = o.isento ? fv : fv - (fv-inv)*ir;
+    rows+=`<tr><td>${o.n}<br><span class="note">${o.obs}</span></td><td class="n">${pct(o.a)}</td><td class="n">${brl(inv)}</td><td class="n">${brl(liq)}</td></tr>`;
+  });
+  $("simIntro").textContent = `${brl(inicial)} hoje + ${brl(F.aporte)} por mês durante ${anos} ano(s). Valores líquidos de IR (${(ir*100).toLocaleString("pt-BR")}%), em reais nominais, sem custódia. É uma estimativa com premissas, não uma promessa.`;
+  $("sim").innerHTML = `<table><thead><tr><th>Aplicação</th><th class="n">Taxa a.a.</th><th class="n">Você aplica</th><th class="n">Valor líquido estimado</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function renderRules(res, m){
+  const whys = res.regras.slice(0,5).map(r=>r.why);
+  if(res.trilha.length===6) whys[5] = res.regras.find(r=>(r.c==="R6"||r.c==="R7") && r.ok).why;
+  let h = res.trilha.map((t,k)=>`<li><b>${t.q}</b><div><span class="tag ${t.r?"sim":"nao"}">${t.r?"SIM":"NÃO"}</span>${t.fato}</div><div class="why">${whys[k]}</div></li>`).join("");
+  if(res.folha==="G" && m.baratas.length){
+    h += `<li><b>Por que já entram ações com prazo mais curto?</b><div class="why">Sua reserva está completa e você aceita quedas temporárias. Uma fatia pequena (até duas ações, 4% cada) deixa você começar na bolsa sem colocar o objetivo em risco. As escolhidas são as de maiores dividendos entre as que passam no filtro de preço: P/L abaixo de ${FILTRO.pl} e P/VP abaixo de ${FILTRO.pvp} ou dividendos de ${FILTRO.dy}% ou mais.</div></li>`;
+  }
+  if(res.folha==="F"){
+    h += `<li><b>Por que a parte em bolsa não é maior?</b><div class="why">${m.rfForte?`O Tesouro IPCA+ paga ${pct(m.juroReal)} acima da inflação, um ganho alto para algo tão seguro. Quando a renda fixa paga acima de ${P.juroRealAlto}% de juro real, o app reduz a parte em ações: a bolsa precisa render muito mais para valer o risco.`:`O juro real do Tesouro está abaixo de ${P.juroRealAlto}%, então a parte em ações recebe o valor cheio para o seu perfil.`}</div></li>
+    <li><b>Como o app decide se uma ação está barata?</b><div class="why">Ela precisa ter preço baixo em relação ao lucro (P/L abaixo de ${FILTRO.pl}) e, além disso, custar menos que o patrimônio da empresa (P/VP abaixo de ${FILTRO.pvp}) ou pagar dividendos de ${FILTRO.dy}% ou mais por ano. Barata não quer dizer que vai subir: os riscos de cada uma estão nos cards.</div>
+    <div class="why" style="margin-top:6px">${m.acoes.map(a=>`${a.tk}: P/L ${fx(a.pl,1)}, P/VP ${fx(a.pvp)}, dividendos ${pct(a.dy,1)} → <b>${a.ok?"barata":"fora do filtro"}</b>`).join("<br>")}</div></li>
+    <li><b>Por que um ETF como base da bolsa?</b><div class="why">Com uma cota do IVVB11 você investe em 500 empresas dos EUA de uma vez, pagando ${pct(MKT.ivvb11.taxa)} ao ano. Ações individuais concentram o risco numa só empresa, por isso entram em fatias pequenas: até duas para quem aceita quedas temporárias e até três para quem aceita oscilações fortes e já tem experiência.</div></li>`;
+  }
+  $("rules").innerHTML = h;
+}
+
+function run(){
+  const F=fatos(), res=inferir(F), m=mercado();
+  renderFolha(res,F,m); renderThermo(m); renderSim(res,F); renderRules(res,m);
+  const r=$("rec"); r.classList.remove("fade"); void r.offsetWidth; r.classList.add("fade");
+}
+
+const DEF={}; document.querySelectorAll("#f input,#f select").forEach(e=>DEF[e.id]=e.value);
+$("f").addEventListener("submit",e=>{e.preventDefault();run();$("h-rec").scrollIntoView({behavior:"smooth"});});
+$("reset").addEventListener("click",()=>{Object.entries(DEF).forEach(([k,v])=>$(k).value=v);run();});
+function setScen(s){cenario=s;$("scAtual").setAttribute("aria-pressed",s==="atual");$("scCaro").setAttribute("aria-pressed",s==="caro");run();}
+$("scAtual").addEventListener("click",()=>setScen("atual"));
+$("scCaro").addEventListener("click",()=>setScen("caro"));
+run();
+</script>
+</body>
+</html>
